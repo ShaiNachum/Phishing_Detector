@@ -1,0 +1,16 @@
+From: Newsletter <newsletter@company-updates.tk>
+To: customer@example.com
+Subject: Important Account Update Required
+
+Dear Valued Customer,
+
+We have detected suspicious activity on your account. Please click the link below to verify your identity and protect your account:
+
+https://13.54.126.73/login/verify.php?account=verification
+
+Alternatively, you can use our secure website: secure-login.verification-center.xyz/auth?redirect=customer.portal&token=37f9a
+
+If you do not update your information within 24 hours, your account will be suspended.
+
+Thank you,
+Account Security Team

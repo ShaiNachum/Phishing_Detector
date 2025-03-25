@@ -1,0 +1,500 @@
+#!/usr/bin/env python3
+"""
+Modified Email Phishing Detector - Web Interface
+
+A simplified web interface for the phishing detector that allows users
+to upload email content and view the analysis results.
+"""
+
+from flask import Flask, render_template, request, redirect, url_for, flash
+import os
+import tempfile
+from phishing_detector import analyze_email, read_email_file
+
+# Initialize Flask application
+app = Flask(__name__)
+# Set a random secret key for session security and flashing messages
+app.secret_key = os.urandom(24)  # Generates a new random key on each server start
+# Limit upload size to 1MB to prevent DoS attacks and server overload
+app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024  
+
+# Create templates directory if it doesn't exist
+# This ensures the application can write the template file on first run
+os.makedirs('templates', exist_ok=True)
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    """Homepage route with upload form and results display."""
+    analysis_result = None
+    
+    if request.method == 'POST':
+        # Check if a file was included in the form submission
+        if 'email_file' not in request.files:
+            # If not, flash an error message to the user
+            flash('No file selected', 'error')
+            return redirect(request.url)
+            
+        file = request.files['email_file']
+        
+        # Check if user submitted an empty form field (clicked submit without selecting a file)
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(request.url)
+            
+        # Process file if it exists and has a valid extension (.txt or .eml)
+        if file and file.filename.endswith(('.txt', '.eml')):
+            try:
+                # Save uploaded file to a temporary location for processing
+                # This prevents file system clutter and security issues
+                with tempfile.NamedTemporaryFile(delete=False) as temp:
+                    file.save(temp.name)
+                    temp_path = temp.name
+                
+                # Read and analyze the email content using functions from phishing_detector.py
+                email_content = read_email_file(temp_path)
+                analysis_result = analyze_email(email_content)
+                
+                # Process URL reputation results to fix template issues
+                if analysis_result and 'url_reputation' in analysis_result:
+                    malicious_urls = []
+                    for url, reputation in analysis_result['url_reputation'].items():
+                        if reputation.get('is_malicious', False):  # Use get() to safely handle missing keys
+                            malicious_urls.append((url, reputation))
+                    
+                    # Add the prepared list to the analysis result for easy template access
+                    analysis_result['malicious_urls'] = malicious_urls
+                
+                # Clean up the temporary file after processing
+                # This prevents accumulation of temporary files on the server
+                os.unlink(temp_path)
+            except Exception as e:
+                # Handle any errors that occur during file processing or analysis
+                flash(f'Error analyzing email: {str(e)}', 'error')
+        else:
+            # If file has an invalid extension, inform the user
+            flash('Invalid file type. Please upload a .txt or .eml file', 'error')
+    
+    # Render the index template with analysis results (if any)
+    return render_template('index.html', analysis=analysis_result)
+
+
+# Dynamically create HTML template for the web interface
+# This approach eliminates the need for a separate template file
+# The template is only written once when the server first starts
+with open('templates/index.html', 'w', encoding='utf-8') as f:
+    f.write("""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Phishing Detector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1, h2, h3, h4 {
+            color: #2c3e50;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .upload-form {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .result-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .score-display {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .score-high {
+            color: #dc3545;
+        }
+        .score-medium {
+            color: #fd7e14;
+        }
+        .score-low {
+            color: #28a745;
+        }
+        .section {
+            margin-top: 15px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .indicator-list {
+            list-style-type: none;
+            padding-left: 10px;
+        }
+        .indicator-list li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .indicator-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #e74c3c;
+        }
+        .email-info {
+            background-color: #eaf2f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .recommendation {
+            background-color: #fef9e7;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            border-left: 5px solid #f1c40f;
+        }
+        .detail-item {
+            background-color: #f8f9fa;
+            border-left: 3px solid #3498db;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .nested-list {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+        .nested-list li:before {
+            content: "◦";
+            position: absolute;
+            left: 0;
+            color: #3498db;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .badge-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .badge-warning {
+            background-color: #fd7e14;
+            color: white;
+        }
+        .badge-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .reputation-high {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .reputation-medium {
+            color: #fd7e14;
+            font-weight: bold;
+        }
+        .tabs {
+            display: flex;
+            margin-top: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-right: 5px;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            background-color: #f8f9fa;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Email Phishing Detector</h1>
+    
+    <div class="container">
+        <div class="upload-form">
+            <h2>Upload Email for Analysis</h2>
+            <p>Upload a text file (.txt) or email file (.eml) containing the email content to analyze for phishing indicators.</p>
+            
+            {% for category, message in get_flashed_messages(with_categories=true) %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            
+            <form action="/" method="post" enctype="multipart/form-data">
+                <input type="file" name="email_file" accept=".txt,.eml" required>
+                <button type="submit" class="btn">Analyze Email</button>
+            </form>
+        </div>
+        
+        {% if analysis %}
+            <div class="result-container">
+                <div class="result-header">
+                    <h2>Analysis Results</h2>
+                    <div class="score-display {% if analysis.phishing_score >= 75 %}score-high{% elif analysis.phishing_score >= 45 %}score-medium{% else %}score-low{% endif %}">
+                        Phishing Score: {{ analysis.phishing_score }}/100
+                        ({{ analysis.phishing_likelihood }})
+                    </div>
+                </div>
+                
+                <div class="email-info">
+                    <p><strong>From:</strong> {{ analysis.email_parts.sender }}</p>
+                    <p><strong>Subject:</strong> {{ analysis.email_parts.subject }}</p>
+                    {% if analysis.email_parts.attachments %}
+                        <p><strong>Attachments:</strong> {{ analysis.email_parts.attachments|join(', ') }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="tabs">
+                    <div class="tab active" onclick="openTab(event, 'summary')">Summary</div>
+                    <div class="tab" onclick="openTab(event, 'links')">Links</div>
+                    <div class="tab" onclick="openTab(event, 'sender')">Sender</div>
+                    <div class="tab" onclick="openTab(event, 'content')">Content</div>
+                    {% if analysis.attachment_risks.has_risky_attachments %}
+                        <div class="tab" onclick="openTab(event, 'attachments')">Attachments</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Summary Tab -->
+                <div id="summary" class="tab-content active">
+                    {% if analysis.phishing_indicators %}
+                        <div class="section">
+                            <h3>Detected Phishing Indicators</h3>
+                            <ul class="indicator-list">
+                                {% for indicator in analysis.phishing_indicators %}
+                                    <li>{{ indicator }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    {% if analysis.phishing_likelihood in ["HIGHLY LIKELY", "LIKELY", "SUSPICIOUS"] %}
+                        <div class="recommendation">
+                            <h3>⚠️ Security Recommendation</h3>
+                            {% if analysis.phishing_likelihood in ["HIGHLY LIKELY", "LIKELY"] %}
+                                <p>This email shows strong signs of being a phishing attempt. Do not click any links, download attachments, or respond to this email.</p>
+                                <p>If this appears to be from a service you use, contact them directly through their official website or customer service number to verify.</p>
+                            {% else %}
+                                <p>This email shows some suspicious characteristics. Exercise caution and verify the sender through alternate channels before taking any requested actions.</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Links Tab -->
+                <div id="links" class="tab-content">
+                    {% if analysis.suspicious_links %}
+                        <div class="section">
+                            <h3>Suspicious Links</h3>
+                            <ul class="indicator-list">
+                                {% for link in analysis.suspicious_links %}
+                                    <li>
+                                        <strong>{{ link.url }}</strong>
+                                        <ul class="nested-list">
+                                            {% for reason in link.reasons %}
+                                                <li>{{ reason }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="section">
+                            <p>No suspicious links detected based on URL patterns.</p>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- URL Reputation Section -->
+                    {% if analysis.malicious_urls %}
+                        <div class="section">
+                            <h3>URL Reputation Checks</h3>
+                            <ul class="indicator-list">
+                                {% for url, reputation in analysis.malicious_urls %}
+                                    <li>
+                                        <strong>{{ url }}</strong>
+                                        <span class="badge badge-danger">{{ reputation.threat_type }}</span>
+                                        <ul class="nested-list">
+                                            <li>Confidence: <span class="reputation-{{ reputation.confidence|lower }}">{{ reputation.confidence }}</span></li>
+                                            <li>Source: {{ reputation.source }}</li>
+                                        </ul>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="section">
+                            <p>No URLs flagged by reputation services.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Sender Tab -->
+                <div id="sender" class="tab-content">
+                    {% if analysis.spoofed_sender.is_spoofed %}
+                        <div class="section">
+                            <h3>Sender Spoofing Analysis</h3>
+                            <ul class="indicator-list">
+                                {% for reason in analysis.spoofed_sender.reasons %}
+                                    <li>{{ reason }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="section">
+                            <p>No sender spoofing detected. The sender appears legitimate based on our analysis.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Content Tab -->
+                <div id="content" class="tab-content">
+                    {% if analysis.urgent_language.has_urgent_language or analysis.urgent_language.has_reward_language %}
+                        <div class="section">
+                            <h3>Language Analysis</h3>
+                            
+                            {% if analysis.urgent_language.urgency_phrases %}
+                                <h4>Urgency Phrases:</h4>
+                                <ul class="indicator-list">
+                                    {% for phrase in analysis.urgent_language.urgency_phrases %}
+                                        <li>"{{ phrase }}"</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                            
+                            {% if analysis.urgent_language.threat_phrases %}
+                                <h4>Threat Phrases:</h4>
+                                <ul class="indicator-list">
+                                    {% for phrase in analysis.urgent_language.threat_phrases %}
+                                        <li>"{{ phrase }}"</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                            
+                            {% if analysis.urgent_language.reward_phrases %}
+                                <h4>Reward/Enticement Phrases:</h4>
+                                <ul class="indicator-list">
+                                    {% for phrase in analysis.urgent_language.reward_phrases %}
+                                        <li>"{{ phrase }}"</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="section">
+                            <p>No urgent, threatening, or enticement language detected.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Attachments Tab -->
+                {% if analysis.attachment_risks.has_risky_attachments %}
+                    <div id="attachments" class="tab-content">
+                        <div class="section">
+                            <h3>Attachment Risk Analysis</h3>
+                            <ul class="indicator-list">
+                                {% for risk in analysis.attachment_risks.attachment_risks %}
+                                    <li>{{ risk }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        function openTab(evt, tabName) {
+            // Hide all tab content
+            var tabcontent = document.getElementsByClassName("tab-content");
+            for (var i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+            
+            // Remove active class from all tabs
+            var tabs = document.getElementsByClassName("tab");
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            
+            // Show the selected tab content and mark the button as active
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+    </script>
+</body>
+</html>""")
+
+
+if __name__ == '__main__':
+    # Print startup message with instructions
+    print("Starting Email Phishing Detector Web Interface...")
+    print("Open your browser and go to http://127.0.0.1:5000")
+    # Start the Flask development server
+    # debug=True enables auto-reload when code changes and provides detailed error pages
+    app.run(debug=True)

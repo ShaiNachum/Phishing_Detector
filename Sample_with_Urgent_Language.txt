@@ -1,0 +1,17 @@
+From: IT Support <support@company.com>
+To: employee@example.com
+Subject: URGENT: Immediate password reset required
+
+URGENT ACTION REQUIRED
+
+Dear Employee,
+
+Your company account password will expire in 24 hours. You must update it immediately to avoid being locked out of all company systems.
+
+Failure to update your password will result in account termination and you will be reported to management for security protocol violation.
+
+Update now: https://password-update.company-portal.com
+
+This is your final warning.
+
+IT Security Department

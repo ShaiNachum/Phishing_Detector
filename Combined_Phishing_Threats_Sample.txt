@@ -1,0 +1,46 @@
+From: PayPal Customer Support <support@paypa1-secure.com>
+To: customer@example.com
+Subject: URGENT: Your PayPal account has been limited - Action Required in 24 hours
+
+IMPORTANT SECURITY ALERT - IMMEDIATE ACTION REQUIRED
+
+Dear Valued PayPal Customer,
+
+We have detected suspicious login attempts on your PayPal account from an unrecognized device in Moscow, Russia. For your security, we have temporarily limited access to your account.
+
+Your account access will be permanently suspended unless you verify your information within 24 hours. Any pending transactions will be canceled, and your funds may be held for up to 180 days.
+
+Please take IMMEDIATE action by:
+
+1) Click on the secure verification link below:
+   https://paypal-verification.securelogin.tk/account/verify?id=32947459
+
+2) Or use our direct IP-based secure system:
+   http://13.57.149.83/paypal/secure.php?account=verification&session=3485729XHSE
+
+3) Alternatively, download and run our account verification tool:
+   PayPal_Security_Scanner.exe
+
+If you fail to verify your account details, we will be forced to permanently suspend your account and report this security breach to financial authorities.
+
+We recently updated our security protocols to protect against the rise in fraud - failure to comply with these verification steps will be considered a violation of our updated terms of service.
+
+For additional security, please have the following information ready:
+- Your complete credit card information
+- Bank account details
+- Recent transaction history
+- Social security number (for US customers)
+
+Do not share this email with anyone as the verification links are tied to your specific account.
+
+This is your final notice. If you believe this is an error, please contact our security team immediately to avoid account suspension.
+
+Attachments:
+- PayPal_Account_Verification_Form.pdf.exe
+- Security_Update_Instructions.zip
+
+Thank you for your immediate attention to this critical security matter.
+
+Sincerely,
+PayPal Security Team
+www.paypal.com

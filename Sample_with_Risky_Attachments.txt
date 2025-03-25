@@ -1,0 +1,19 @@
+From: HR Department <hr@company.com>
+To: employee@example.com
+Subject: Important Company Policy Update
+
+Dear Employee,
+
+Please find attached our updated company policy document that requires your immediate review and acknowledgment.
+
+The document includes important information about new security protocols that will be effective starting next week.
+
+Attachments:
+- Company_Policy_2023.docm
+- Security_Update.exe
+- Acknowledgment_Form.pdf.bat
+
+Please review and acknowledge receipt by end of day.
+
+Best regards,
+HR Department

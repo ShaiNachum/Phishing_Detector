@@ -1,0 +1,12 @@
+From: PayPal Security <security@paypa1.com>
+To: user@example.com
+Subject: Your PayPal account has been limited
+
+Dear PayPal Customer,
+
+We have noticed unusual activity in your account. Please verify your information to restore full access to your PayPal services.
+
+Click here: https://paypalverify.com/account/secure
+
+Thank you,
+PayPal Customer Support Team

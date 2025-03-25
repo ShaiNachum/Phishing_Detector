@@ -1,0 +1,17 @@
+From: Account Services <services@banking-secure.com>
+To: customer@example.com
+Subject: Security Alert: Verify Your Account
+
+Dear Customer,
+
+We have detected unusual login attempts on your account. Please verify your identity by clicking the link below:
+
+https://www.mako.co.il
+
+If you did not attempt to login, please update your security settings immediately:
+
+https://legitimate-bank.com.malware-distribution.com/settings
+
+Thank you for your prompt attention to this matter.
+
+Account Security Team
