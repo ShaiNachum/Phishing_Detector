@@ -253,25 +253,6 @@ Analyzes sender information to detect impersonation attempts:
 | **Common Target Check** | Checks against list of frequently impersonated companies | Provides extra scrutiny for emails claiming to be from high-value targets like banks, payment processors, and major tech companies. |
 
 ```python
-
-```
-
-### 3. Content Analysis (`check_urgent_language`)
-Examines email content for psychological manipulation tactics:
-
-| Check | Description | Why It Matters |
-|-------|-------------|----------------|
-| **Urgency Patterns** | Identifies language creating time pressure (40+ patterns) | Attackers rush users to prevent careful consideration of suspicious elements. |
-| **Threat Detection** | Finds threatening language and consequences (25+ patterns) | Fear tactics pressure users into taking action without verification. |
-| **Reward/Enticement Analysis** | Recognizes promises of rewards or benefits (20+ patterns) | Exploits desire for free items or financial gain to override security concerns. |
-| **Context-Aware Matching** | Examines both subject and body text | Ensures comprehensive analysis of all text parts where manipulation might occur. |
-
-Examples of detected phrases:
-- Urgency: "urgent", "immediately", "24 hours", "account suspended", "security alert"
-- Threats: "will be terminated", "legal action", "funds will be withdrawn", "permanently disabled"
-- Enticements: "free gift", "selected winner", "exclusive offer", "claim your prize"
-
-```python
 def check_spoofed_sender(email_parts: Dict) -> Dict:
     """
     Check for signs of spoofed sender address using multiple detection techniques.
@@ -320,6 +301,50 @@ def check_spoofed_sender(email_parts: Dict) -> Dict:
                 break
     
     return result
+```
+
+### 3. Content Analysis (`check_urgent_language`)
+Examines email content for psychological manipulation tactics:
+
+| Check | Description | Why It Matters |
+|-------|-------------|----------------|
+| **Urgency Patterns** | Identifies language creating time pressure (40+ patterns) | Attackers rush users to prevent careful consideration of suspicious elements. |
+| **Threat Detection** | Finds threatening language and consequences (25+ patterns) | Fear tactics pressure users into taking action without verification. |
+| **Reward/Enticement Analysis** | Recognizes promises of rewards or benefits (20+ patterns) | Exploits desire for free items or financial gain to override security concerns. |
+| **Context-Aware Matching** | Examines both subject and body text | Ensures comprehensive analysis of all text parts where manipulation might occur. |
+
+Examples of detected phrases:
+- Urgency: "urgent", "immediately", "24 hours", "account suspended", "security alert"
+- Threats: "will be terminated", "legal action", "funds will be withdrawn", "permanently disabled"
+- Enticements: "free gift", "selected winner", "exclusive offer", "claim your prize"
+
+```python
+def check_urgent_language(email_parts: Dict) -> Dict:
+    """
+    Check for urgent or threatening language in email content.
+    
+    Args:
+        email_parts: Dictionary with parsed email components
+        
+    Returns:
+        Dictionary with urgent language analysis results
+    """
+    subject = email_parts.get('subject', '').lower()
+    body = email_parts.get('body', '').lower()
+    content = subject + " " + body
+    
+    # Check for different types of patterns
+    found_urgency = check_language_patterns(content, URGENCY_PATTERNS)
+    found_threats = check_language_patterns(content, THREAT_PATTERNS)
+    found_rewards = check_language_patterns(content, REWARD_PATTERNS)
+    
+    return {
+        'has_urgent_language': bool(found_urgency or found_threats),
+        'has_reward_language': bool(found_rewards),
+        'urgency_phrases': found_urgency,
+        'threat_phrases': found_threats,
+        'reward_phrases': found_rewards
+    }
 ```
 
 ### 4. Attachment Security (`check_attachment_risks`)
